@@ -1,3 +1,8 @@
+import "@fontsource/fredoka/latin-600.css";
+import "@fontsource/fredoka/latin-700.css";
+import "@fontsource/nunito/latin-400.css";
+import "@fontsource/nunito/latin-700.css";
+import "@fontsource/nunito/latin-800.css";
 import { CATEGORIES, getCategory, type CategoryId } from "./data/categories";
 import { StatementDeck } from "./lib/deck";
 import { downloadResultCard } from "./lib/exportCard";
@@ -168,6 +173,8 @@ function revealResult(categoryId: CategoryId): void {
 
   resultCard.style.setProperty("--card-color", category.color);
   resultCard.style.setProperty("--card-ink", category.ink);
+  resultCard.style.background = category.color;
+  resultCard.style.color = category.ink;
   resultCategory.textContent = category.name;
   resultText.textContent = draw.statement.text;
   resultLayer.hidden = false;
@@ -240,7 +247,8 @@ downloadBtn.addEventListener("click", async () => {
   downloadBtn.disabled = true;
   try {
     const category = resultCategory.textContent ?? "resultado";
-    await downloadResultCard(resultCard, `ruleta-${slugify(category)}.png`);
+    const background = resultCard.style.background || "#140c16";
+    await downloadResultCard(resultCard, `ruleta-${slugify(category)}.png`, background);
   } catch {
     showToast("No se pudo armar la imagen. Probá de nuevo.");
   } finally {
