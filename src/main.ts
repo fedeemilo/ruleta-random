@@ -66,14 +66,23 @@ app.innerHTML = `
     </section>
   </main>
 
-  <div class="result-layer" data-result-layer hidden tabindex="-1">
-    <div class="result-shell">
+  <div class="result-layer" data-result-layer hidden>
+    <div
+      class="result-shell"
+      role="dialog"
+      aria-modal="true"
+      aria-labelledby="result-statement"
+      data-result-dialog
+    >
+      <button type="button" class="result-close" data-close aria-label="Cerrar">
+        <span aria-hidden="true">×</span>
+      </button>
       <article class="result-card" data-result-card>
         <div class="card-brand">
           <span>Ruleta mágica</span>
           <span class="badge" data-result-category></span>
         </div>
-        <p class="statement" data-result-text></p>
+        <p class="statement" id="result-statement" data-result-text></p>
         <p class="prompt">¿Estás de acuerdo?</p>
       </article>
       <div class="actions">
@@ -96,6 +105,8 @@ const resultText = qs<HTMLElement>("[data-result-text]");
 const toastEl = qs<HTMLElement>("[data-toast]");
 const downloadBtn = qs<HTMLButtonElement>("[data-download]");
 const againBtn = qs<HTMLButtonElement>("[data-again]");
+const closeBtn = qs<HTMLButtonElement>("[data-close]");
+const resultDialog = qs<HTMLElement>("[data-result-dialog]");
 const pickButtons = Array.from(document.querySelectorAll<HTMLButtonElement>("[data-pick]"));
 
 function renderWheel(): string {
@@ -178,7 +189,7 @@ function revealResult(categoryId: CategoryId): void {
   resultCategory.textContent = category.name;
   resultText.textContent = draw.statement.text;
   resultLayer.hidden = false;
-  resultLayer.focus();
+  closeBtn.focus();
   statusEl.textContent = `Quedan ${draw.remainingAfter} de ${draw.total} en ${category.shortName}.`;
 
   if (draw.reset) {
@@ -186,8 +197,14 @@ function revealResult(categoryId: CategoryId): void {
   }
 }
 
+function isResultOpen(): boolean {
+  return !resultLayer.hidden;
+}
+
 function closeResult(): void {
+  if (!isResultOpen()) return;
   resultLayer.hidden = true;
+  spinBtn.focus();
 }
 
 async function spinTo(categoryId: CategoryId): Promise<void> {
@@ -243,6 +260,20 @@ againBtn.addEventListener("click", () => {
   void spinTo(pickRandomCategory());
 });
 
+closeBtn.addEventListener("click", () => {
+  closeResult();
+});
+
+resultLayer.addEventListener("click", (event) => {
+  if (event.target === resultLayer) {
+    closeResult();
+  }
+});
+
+resultDialog.addEventListener("click", (event) => {
+  event.stopPropagation();
+});
+
 downloadBtn.addEventListener("click", async () => {
   downloadBtn.disabled = true;
   try {
@@ -257,11 +288,20 @@ downloadBtn.addEventListener("click", async () => {
 });
 
 document.addEventListener("keydown", (event) => {
+  if (event.key === "Escape") {
+    if (isResultOpen()) {
+      event.preventDefault();
+      closeResult();
+    }
+    return;
+  }
+
+  if (isResultOpen()) {
+    return;
+  }
+
   if (event.code === "Space" && event.target === document.body) {
     event.preventDefault();
     void spinTo(pickRandomCategory());
-  }
-  if (event.key === "Escape") {
-    closeResult();
   }
 });
